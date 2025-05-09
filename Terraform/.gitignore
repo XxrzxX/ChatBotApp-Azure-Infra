@@ -3,30 +3,18 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
-#Secret 
+# My secrects
 .env
 chat_logs
 pdf_store
 chroma.log
-chroma_db
-SSHKEY
+SSHKeys
+access_vaules
 .terraform
 terraform.tfstate
 terraform.tfstate.backup
 .terraform.lock.hcl
 .terraform-version
-*.tfvars
-*.tfstate
-*.tfstate.backup
-*.tfvars.json
-*.tfstate.json
-*.tfstate.backup.json
-*.tfvars.json.backup
-*.tfstate.json.backup
-*.tfstate.backup.json.backup
-*.tfvars.json.backup.json
-
-
 
 # User-specific files
 *.rsuser
@@ -180,7 +168,6 @@ coverage*.info
 
 # NCrunch
 _NCrunch_*
-.NCrunch_*
 .*crunch*.local.xml
 nCrunchTemp_*
 
