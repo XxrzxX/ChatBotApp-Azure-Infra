@@ -105,7 +105,7 @@ Before proceeding with the setup, ensure you have the following:
   <br>
   
 > [!Note]
->  For detailed setup instructions, refer to the [Wiki](<YOUR_WIKI_URL_HERE>).  
+>  For detailed setup instructions, refer to the [Wiki](https://github.com/XxrzxX/ChatBotApp-Azure-Infra/wiki).  
 
 <br>
 
