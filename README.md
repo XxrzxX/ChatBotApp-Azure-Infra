@@ -40,7 +40,6 @@
 
 <br>
 <br>
-<br>
 
 ## 📍 Overview
 This project establishes a scalable, secure, and automated web application infrastructure on Microsoft Azure. Utilizing Terraform modules and Ansible, the deployment and management of cloud resources are streamlined, ensuring efficiency and reliability. GitHub Actions further enhances automation by keeping VM instances consistently updated, reducing manual intervention.
