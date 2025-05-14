@@ -1,8 +1,8 @@
 #!/bin/bash
-
+# This script sets up a Backend & Frontend environment with systemd services on a Linux machine.
 # Check if the correct number of arguments is provided
-if [ $# -ne 7 ]; then
-    echo "Usage: $0 <PAT_token> <repo_url> <branch_name> <db_host> <target_db> <db_username> <db_password>"
+if [ $# -ne 4 ]; then
+    echo "Usage: $0 <PAT_token> <repo_url> <branch_name> <key_vault_name>"
     exit 1
 fi
 
@@ -10,39 +10,11 @@ fi
 PAT_TOKEN="$1"
 REPO_URL="$2"
 BRANCH_NAME="$3"
-DB_HOST="$4"
-TARGET_DB="$5"
-DB_USERNAME="$6"
-DB_PASSWORD="$7"
+KEY_VAULT_NAME="$4"
 REPO_NAME=$(basename "$REPO_URL" .git)
 USER=$(whoami)
 HOME_DIR=$(eval echo ~$USER)
 
-# Database names
-DEFAULT_DB="postgres"
-
-# Set up PostgreSQL database
-echo "Setting up database..."
-
-# Step 1: Create the 'TARGET_DB' database
-echo "Creating the $TARGET_DB database..."
-psql "host=$DB_HOST port=5432 dbname=$DEFAULT_DB user=$DB_USERNAME password=$DB_PASSWORD sslmode=require" \
-    -c "CREATE DATABASE $TARGET_DB;" 2>/dev/null || echo "Database '$TARGET_DB' already exists."
-
-# Step 2: Create the 'advanced_chats' table in the 'chatbot' database
-echo "Creating the 'advanced_chats' table in the $TARGET_DB database..."
-psql "host=$DB_HOST port=5432 dbname=$TARGET_DB user=$DB_USERNAME password=$DB_PASSWORD sslmode=require" \
-    -c "CREATE TABLE IF NOT EXISTS advanced_chats (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        file_path TEXT NOT NULL,
-        last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        pdf_path TEXT,
-        pdf_name TEXT,
-        pdf_uuid TEXT
-    );"
-
-echo "Database and table setup completed successfully."
 
 # Set up Conda environment
 echo "Setting up conda environment..."
@@ -77,16 +49,7 @@ fi
 # Step 5: Create .env file in the repository directory
 echo "Creating .env file..."
 cat <<EOF | sudo tee $HOME_DIR/$REPO_NAME/.env
-OPENAI_API_KEY=<OPENAI_API_KEY>
-DB_NAME=$TARGET_DB
-DB_USER=$DB_USERNAME
-DB_PASSWORD=$DB_PASSWORD
-DB_HOST=$DB_HOST
-DB_PORT=5432
-AZURE_STORAGE_SAS_URL=<AZURE_STORAGE_SAS_URL>
-AZURE_STORAGE_CONTAINER=<AZURE_STORAGE_CONTAINER>
-CHROMADB_HOST=<CHROMADB_HOST>
-CHROMADB_PORT=8000
+KEY_VAULT_NAME=$KEY_VAULT_NAME
 EOF
 
 # Create systemd services
