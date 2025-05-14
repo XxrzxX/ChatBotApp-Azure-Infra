@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Check if the correct number of arguments is provided
-if [ $# -ne 3 ]; then
-    echo "Usage: $0 <PAT_token> <repo_url> <branch_name>"
+if [ $# -ne 8 ]; then
+    echo "Usage: $0 <PAT_token> <repo_url> <branch_name> <db_host> <target_db> <db_username> <db_password> <key_vault_name>"
     exit 1
 fi
 
@@ -10,9 +10,41 @@ fi
 PAT_TOKEN="$1"
 REPO_URL="$2"
 BRANCH_NAME="$3"
+DB_HOST="$4"
+TARGET_DB="$5"
+DB_USERNAME="$6"
+DB_PASSWORD="$7"
+KEY_VAULT_NAME="$8"
 REPO_NAME=$(basename "$REPO_URL" .git)
 USER=$(whoami)
 HOME_DIR=$(eval echo ~$USER)
+
+# Database names
+DEFAULT_DB="postgres"
+
+# Set up PostgreSQL database
+echo "Setting up database..."
+
+# Step 1: Create the 'TARGET_DB' database
+echo "Creating the $TARGET_DB database..."
+psql "host=$DB_HOST port=5432 dbname=$DEFAULT_DB user=$DB_USERNAME password=$DB_PASSWORD sslmode=require" \
+    -c "CREATE DATABASE $TARGET_DB;" 2>/dev/null || echo "Database '$TARGET_DB' already exists."
+
+# Step 2: Create the 'advanced_chats_new' table in the 'TARGET_DB' database
+echo "Creating the 'advanced_chats_new' table in the $TARGET_DB database..."
+psql "host=$DB_HOST port=5432 dbname=$TARGET_DB user=$DB_USERNAME password=$DB_PASSWORD sslmode=require" \
+    -c "CREATE TABLE IF NOT EXISTS advanced_chats (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    pdf_path TEXT,
+    pdf_name TEXT,
+    pdf_uuid TEXT
+);"
+
+echo "Database and table setup completed successfully."
+
 
 # Set up Conda environment
 echo "Setting up conda environment..."
@@ -39,10 +71,14 @@ cd "$REPO_NAME"
 # Install requirements
 echo "Installing requirements..."
 if [ -f requirements.txt ]; then
-    "$HOME_DIR/miniconda3/envs/project/bin/pip" install -r requirements.txt
+    "$HOME_DIR/miniconda3/envs/project/bin/pip" install -r requirements_vm.txt
 else
     echo "No requirements.txt found"
 fi
+
+sudo -u azureuser tee $HOME_DIR/$REPO_NAME/.env <<EOF
+KEY_VAULT_NAME=$KEY_VAULT_NAME
+EOF
 
 # Create systemd services
 echo "Creating systemd services..."
@@ -55,16 +91,17 @@ After=network.target
 Type=simple
 User=$USER
 WorkingDirectory=$HOME_DIR/$REPO_NAME
-ExecStart=$HOME_DIR/miniconda3/envs/project/bin/chroma run --host 0.0.0.0 --port 8000 --path $HOME_DIR/$REPO_NAME/chroma_db
+ExecStart=$HOME_DIR/miniconda3/envs/project/bin/chroma run --host 0.0.0.0 --path $HOME_DIR/$REPO_NAME/chroma_db
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
+# Reload systemd and start services
 echo "Reloading systemd and starting services..."
 sudo systemctl daemon-reload
-sudo systemctl enable chromadb
-sudo systemctl start chromadb
-
-echo "Setup completed successfully"```
+for service in chromadb ; do
+    sudo systemctl enable $service
+    sudo systemctl start $service
+done
